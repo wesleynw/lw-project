@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { images } from "@/db/schema";
+import { images, postImages } from "@/db/schema";
 import {
   DeleteObjectCommand,
   GetObjectCommand,
@@ -51,8 +51,9 @@ export async function deleteObjects(post_id: number) {
   try {
     const result = await db
       .select({ imageBlobUrl: images.image_blob_url })
-      .from(images)
-      .where(eq(images.post_id, post_id));
+      .from(postImages)
+      .innerJoin(images, eq(images.image_id, postImages.image_id))
+      .where(eq(postImages.post_id, post_id));
 
     if (!result?.[0]) {
       return;

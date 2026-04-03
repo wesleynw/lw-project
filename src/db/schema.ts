@@ -3,6 +3,7 @@ import {
   boolean,
   integer,
   pgTable,
+  primaryKey,
   serial,
   text,
   timestamp,
@@ -99,16 +100,39 @@ export type InsertComment = typeof comments.$inferInsert;
 
 export const images = pgTable("images", {
   image_id: serial().primaryKey().notNull(),
-  post_id: integer("post_id")
-    .notNull()
-    .references(() => posts.post_id, { onDelete: "cascade" }),
   height: integer().notNull(),
   width: integer().notNull(),
   image_blob_url: text().notNull(),
-  display_order: integer().default(0).notNull(),
 });
 
 export type ImageType = typeof images.$inferSelect;
+
+export const postImages = pgTable(
+  "post_images",
+  {
+    post_id: integer("post_id")
+      .notNull()
+      .references(() => posts.post_id, { onDelete: "cascade" }),
+    image_id: integer("image_id")
+      .notNull()
+      .references(() => images.image_id, { onDelete: "cascade" }),
+    display_order: integer("display_order").default(0).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.image_id, table.post_id] })],
+);
+
+export const commentImages = pgTable(
+  "comment_images",
+  {
+    comment_id: integer("comment_id")
+      .notNull()
+      .references(() => comments.comment_id, { onDelete: "cascade" }),
+    image_id: integer("image_id")
+      .notNull()
+      .references(() => images.image_id, { onDelete: "cascade" }),
+  },
+  (table) => [primaryKey({ columns: [table.comment_id, table.image_id] })],
+);
 
 export const follows = pgTable(
   "follows",
