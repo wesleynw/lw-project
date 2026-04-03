@@ -130,15 +130,7 @@ export const images = pgTable("images", {
 	height: integer().notNull(),
 	width: integer().notNull(),
 	imageBlobUrl: text("image_blob_url").notNull(),
-	postId: integer("post_id").notNull(),
-	displayOrder: integer("display_order").default(0).notNull(),
-}, (table) => [
-	foreignKey({
-			columns: [table.postId],
-			foreignColumns: [posts.postId],
-			name: "images_post_id_posts_post_id_fk"
-		}).onDelete("cascade"),
-]);
+});
 
 export const likes = pgTable("likes", {
 	postId: integer("post_id").notNull(),
@@ -210,6 +202,11 @@ export const notifications = pgTable("notifications", {
 			name: "notifications_post_id_posts_post_id_fk"
 		}).onDelete("cascade"),
 	foreignKey({
+			columns: [table.targetUserId],
+			foreignColumns: [users.userId],
+			name: "notifications_target_user_id_fkey"
+		}).onDelete("set null"),
+	foreignKey({
 			columns: [table.userId],
 			foreignColumns: [users.userId],
 			name: "notifications_user_id_users_user_id_fk"
@@ -262,20 +259,55 @@ export const verificationCodes = pgTable("verificationCodes", {
 	unique("verificationCodes_user_id_unique").on(table.userId),
 ]);
 
+export const commentImages = pgTable("comment_images", {
+	commentId: integer("comment_id").notNull(),
+	imageId: integer("image_id").notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.commentId],
+			foreignColumns: [comments.commentId],
+			name: "comment_images_comment_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.imageId],
+			foreignColumns: [images.imageId],
+			name: "comment_images_image_id_fkey"
+		}).onDelete("cascade"),
+	primaryKey({ columns: [table.commentId, table.imageId], name: "comment_images_pkey"}),
+]);
+
 export const userRelationship = pgTable("user_relationship", {
 	userId: integer("user_id").notNull(),
 	targetUserId: integer("target_user_id").notNull(),
-	createdAt: timestamp("created_at", { mode: 'string' }),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.targetUserId],
 			foreignColumns: [users.userId],
-			name: "user_relationship_target_user_id_fkey"
-		}),
+			name: "user_relationship_target_user_id_fkey1"
+		}).onDelete("cascade"),
 	foreignKey({
 			columns: [table.userId],
 			foreignColumns: [users.userId],
-			name: "user_relationship_user_id_fkey"
-		}),
+			name: "user_relationship_user_id_fkey1"
+		}).onDelete("cascade"),
 	primaryKey({ columns: [table.targetUserId, table.userId], name: "user_relationship_pkey"}),
+]);
+
+export const postImages = pgTable("post_images", {
+	postId: integer("post_id").notNull(),
+	imageId: integer("image_id").notNull(),
+	displayOrder: integer("display_order").default(0).notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.imageId],
+			foreignColumns: [images.imageId],
+			name: "post_images_image_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.postId],
+			foreignColumns: [posts.postId],
+			name: "post_images_post_id_fkey"
+		}).onDelete("cascade"),
+	primaryKey({ columns: [table.imageId, table.postId], name: "post_images_pkey"}),
 ]);

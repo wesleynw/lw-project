@@ -8,6 +8,7 @@ import {
   ImageType,
   likes,
   notifications,
+  postImages,
   posts,
   users,
   VISIBILITY_PUBLIC,
@@ -92,8 +93,7 @@ export async function fetchPosts(
     })
     .from(posts)
     .leftJoin(users, eq(users.user_id, posts.user_id))
-    .leftJoin(comments, eq(comments.post_id, posts.post_id))
-    .leftJoin(images, eq(images.post_id, posts.post_id));
+    .leftJoin(comments, eq(comments.post_id, posts.post_id));
 
   const visibilityFilter = or(
     eq(posts.visibilitytype, VISIBILITY_PUBLIC),
@@ -151,14 +151,15 @@ export async function fetchPosts(
 
   const imagesQuery = await db
     .select({
-      post_id: images.post_id,
+      post_id: postImages.post_id,
       image_data: sql<
         ImageType[]
-      >`json_agg(${images}.* ORDER BY ${images.display_order}) ASC`,
+      >`json_agg(${images}.* ORDER BY ${postImages.display_order}) ASC`,
     })
-    .from(images)
-    .where(inArray(images.post_id, post_ids))
-    .groupBy(images.post_id);
+    .from(postImages)
+    .innerJoin(images, eq(images.image_id, postImages.image_id))
+    .where(inArray(postImages.post_id, post_ids))
+    .groupBy(postImages.post_id);
 
   // Create a map of post_id to images
   const imagesMap = new Map(
@@ -207,7 +208,8 @@ export async function getPostById(post_id: number) {
     .from(posts)
     .innerJoin(users, eq(posts.user_id, users.user_id))
     .leftJoin(comments, eq(posts.post_id, comments.post_id))
-    .leftJoin(images, eq(posts.post_id, images.post_id))
+    .leftJoin(postImages, eq(posts.post_id, postImages.post_id))
+    .leftJoin(images, eq(postImages.image_id, images.image_id))
     .where(eq(posts.post_id, post_id))
     .groupBy(
       posts.post_id,

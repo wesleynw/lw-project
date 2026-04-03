@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { images, users } from "@/db/schema";
+import { images, postImages, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function insertImage(
@@ -11,11 +11,18 @@ export async function insertImage(
   height: number,
   displayOrder: number = 0,
 ) {
-  await db.insert(images).values({
+  const [image] = await db
+    .insert(images)
+    .values({
+      height: height,
+      width: width,
+      image_blob_url: imageBlobUrl,
+    })
+    .returning({ image_id: images.image_id });
+
+  await db.insert(postImages).values({
     post_id: post_id,
-    height: height,
-    width: width,
-    image_blob_url: imageBlobUrl,
+    image_id: image.image_id,
     display_order: displayOrder,
   });
 }

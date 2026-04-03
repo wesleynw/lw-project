@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { users, wrapped, posts, bios, block, comments, follows, images, likes, mute, notifications, pollVote, sessions, verificationCodes, userRelationship } from "./schema";
+import { users, wrapped, posts, bios, block, comments, follows, likes, mute, notifications, pollVote, sessions, verificationCodes, commentImages, images, userRelationship, postImages } from "./schema";
 
 export const wrappedRelations = relations(wrapped, ({one}) => ({
 	user: one(users, {
@@ -32,7 +32,12 @@ export const usersRelations = relations(users, ({many}) => ({
 	mutes_userId: many(mute, {
 		relationName: "mute_userId_users_userId"
 	}),
-	notifications: many(notifications),
+	notifications_targetUserId: many(notifications, {
+		relationName: "notifications_targetUserId_users_userId"
+	}),
+	notifications_userId: many(notifications, {
+		relationName: "notifications_userId_users_userId"
+	}),
 	pollVotes: many(pollVote),
 	sessions: many(sessions),
 	verificationCodes: many(verificationCodes),
@@ -50,10 +55,10 @@ export const postsRelations = relations(posts, ({one, many}) => ({
 		references: [users.userId]
 	}),
 	comments: many(comments),
-	images: many(images),
 	likes: many(likes),
 	notifications: many(notifications),
 	pollVotes: many(pollVote),
+	postImages: many(postImages),
 }));
 
 export const biosRelations = relations(bios, ({one}) => ({
@@ -87,6 +92,7 @@ export const commentsRelations = relations(comments, ({one, many}) => ({
 	}),
 	likes: many(likes),
 	notifications: many(notifications),
+	commentImages: many(commentImages),
 }));
 
 export const followsRelations = relations(follows, ({one}) => ({
@@ -99,13 +105,6 @@ export const followsRelations = relations(follows, ({one}) => ({
 		fields: [follows.followingId],
 		references: [users.userId],
 		relationName: "follows_followingId_users_userId"
-	}),
-}));
-
-export const imagesRelations = relations(images, ({one}) => ({
-	post: one(posts, {
-		fields: [images.postId],
-		references: [posts.postId]
 	}),
 }));
 
@@ -146,9 +145,15 @@ export const notificationsRelations = relations(notifications, ({one}) => ({
 		fields: [notifications.postId],
 		references: [posts.postId]
 	}),
-	user: one(users, {
+	user_targetUserId: one(users, {
+		fields: [notifications.targetUserId],
+		references: [users.userId],
+		relationName: "notifications_targetUserId_users_userId"
+	}),
+	user_userId: one(users, {
 		fields: [notifications.userId],
-		references: [users.userId]
+		references: [users.userId],
+		relationName: "notifications_userId_users_userId"
 	}),
 }));
 
@@ -177,6 +182,22 @@ export const verificationCodesRelations = relations(verificationCodes, ({one}) =
 	}),
 }));
 
+export const commentImagesRelations = relations(commentImages, ({one}) => ({
+	comment: one(comments, {
+		fields: [commentImages.commentId],
+		references: [comments.commentId]
+	}),
+	image: one(images, {
+		fields: [commentImages.imageId],
+		references: [images.imageId]
+	}),
+}));
+
+export const imagesRelations = relations(images, ({many}) => ({
+	commentImages: many(commentImages),
+	postImages: many(postImages),
+}));
+
 export const userRelationshipRelations = relations(userRelationship, ({one}) => ({
 	user_targetUserId: one(users, {
 		fields: [userRelationship.targetUserId],
@@ -187,5 +208,16 @@ export const userRelationshipRelations = relations(userRelationship, ({one}) => 
 		fields: [userRelationship.userId],
 		references: [users.userId],
 		relationName: "userRelationship_userId_users_userId"
+	}),
+}));
+
+export const postImagesRelations = relations(postImages, ({one}) => ({
+	image: one(images, {
+		fields: [postImages.imageId],
+		references: [images.imageId]
+	}),
+	post: one(posts, {
+		fields: [postImages.postId],
+		references: [posts.postId]
 	}),
 }));
